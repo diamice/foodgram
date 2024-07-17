@@ -156,7 +156,7 @@ class UserViewSet(djoser_views.UserViewSet):
         return Response(serializer.data)
 
     @action(detail=True, methods=['put', 'delete'], permission_classes=[IsAuthenticated])
-    def avatar(self, request):
+    def avatar(self, request, id):
         user = request.user
         if request.method == 'PUT':
             serializer = UserAvatarSerializer(user, data=request.data, partial=True)
@@ -197,8 +197,11 @@ class UserViewSet(djoser_views.UserViewSet):
         author_id = self.kwargs.get('id')
         user = request.user
         author = get_object_or_404(User, id=author_id)
+        if not Follow.objects.filter(follower=user, author=author).exists():
+            return Response(
+                'Подписка не найдена',
+                status=status.HTTP_400_BAD_REQUEST
+            )
         follow = get_object_or_404(Follow, user=user, author=author)
         follow.delete()
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
