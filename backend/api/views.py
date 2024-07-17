@@ -74,18 +74,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def delete_favorite(self, request, pk=None):
         recipe = self.get_object()
         user = request.user
-        serializer = FavoriteSerializer(
-            data={
-                'recipe': recipe.id,
-                'user': user.id
-            },
-            context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
-        favorite = Favorite.objects.get(
-            user=user,
-            recipe=recipe
-        )
+
+        try:
+            favorite = Favorite.objects.get(
+                user=user,
+                recipe=recipe
+            )
+        except Favorite.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         favorite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -158,7 +155,7 @@ class UserViewSet(djoser_views.UserViewSet):
         serializer = self.get_serializer(user)
         return Response(serializer.data)
 
-    @action(detail=False, url_path='me/avatar/', methods=['put', 'delete'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['put', 'delete'], permission_classes=[IsAuthenticated])
     def avatar(self, request):
         user = request.user
         if request.method == 'PUT':
@@ -174,7 +171,7 @@ class UserViewSet(djoser_views.UserViewSet):
     @action(methods=['get'], detail=False, permission_classes=(IsAuthenticated,))
     def subscriptions(self, request):
         user = request.user
-        queryset = User.objects.filter(followers__user=user)
+        queryset = User.objects.filter(author__user=user)
         pages = self.paginate_queryset(queryset)
         serializer = UserFollowSerializer(pages, many=True, context={'request': request})
         return self.get_paginated_response(serializer.data)
