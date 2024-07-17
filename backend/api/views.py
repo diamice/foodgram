@@ -74,15 +74,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def delete_favorite(self, request, pk=None):
         recipe = self.get_object()
         user = request.user
-
-        try:
-            favorite = Favorite.objects.get(
-                user=user,
-                recipe=recipe
-            )
-        except Favorite.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
+        serializer = FavoriteSerializer(
+            data={
+                'recipe': recipe.id,
+                'user': user.id
+            },
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        favorite = Favorite.objects.get(
+            user=user,
+            recipe=recipe
+        )
         favorite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -197,7 +200,7 @@ class UserViewSet(djoser_views.UserViewSet):
         author_id = self.kwargs.get('id')
         user = request.user
         author = get_object_or_404(User, id=author_id)
-        if not Follow.objects.filter(follower=user, author=author).exists():
+        if not Follow.objects.filter(user=user, author=author).exists():
             return Response(
                 'Подписка не найдена',
                 status=status.HTTP_400_BAD_REQUEST
