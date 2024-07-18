@@ -11,7 +11,7 @@ from djoser import views as djoser_views
 
 from .serializers import (TagSerializer, IngredientSerializer, RecipeSerializer, UserSerializer, UserFollowSerializer,
                           FollowSerializer, ShoppingCartSerializer, RecipeCreateSerializer, FavoriteSerializer,
-                          UserAvatarSerializer)
+                          UserAvatarSerializer, ShortRecipeSerializer)
 from .pagination import CustomPagination
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import ReadOrAuthorOnly
@@ -67,6 +67,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             user=user,
             recipe=recipe
         )
+        serializer = ShortRecipeSerializer(favorite.recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @favorite.mapping.delete
@@ -106,9 +107,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             user=user,
             recipe=recipe
         )
-        serializer = RecipeSerializer(
-            cart_item.recipe
-        )
+        serializer = ShortRecipeSerializer(cart_item.recipe)
         return Response(
             serializer.data,
             status=status.HTTP_201_CREATED
@@ -137,18 +136,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(methods=['get'], detail=False, permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
-        queryset = Recipe.objects.filter(shopping_cart__user=request.user)
-        ingredients = (queryset.values_list(
-            'recipe__ingredients__ingredient__name',
-            'recipe__ingredients__ingredient__measurement_unit')
-                       .annotate(amount=Sum('recipe__ingredients__amount')))
+        user = request.user
+        ingredients = (RecipeIngredient.objects
+                       .filter(recipe__shopping_cart__user=user)
+                       .values('ingredient__name', 'ingredient__measurement_unit')
+                       .annotate(amount=Sum('amount')))
+
         content = ['Список покупок:\n']
-        for ingredient in ingredients:
-            ingredient, amount, measurement_unit = ingredient
-            content.append(f'{ingredient} - {measurement_unit} {amount}\n')
+        for item in ingredients:
+            content.append(f"{item['ingredient__name']} - {item['amount']} {item['ingredient__measurement_unit']}\n")
+
         response = HttpResponse(content, content_type="text/plain")
-        response["Content-Disposition"] = 'attachment; filename="Shopping_List.txt"'
+        response['Content-Disposition'] = 'attachment; filename="Shopping_List.txt"'
         return response
+
+    @action(methods=['get'], detail=True, url_path='get-link', url_name='get-link',)
+    def get_link(self, request, pk=None):
+        ...
 
 
 class UserViewSet(djoser_views.UserViewSet):

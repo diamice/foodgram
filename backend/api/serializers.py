@@ -42,6 +42,11 @@ class UserAvatarSerializer(UserSerializer):
             'avatar',
         )
 
+    def validate(self, attrs):
+        if 'avatar' not in attrs:
+            raise serializers.ValidationError('Поле "avatar" обязательно для загрузки аватара.')
+        return attrs
+
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -202,6 +207,13 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         return RecipeSerializer(instance, context={'request': self.context.get('request')}).data
 
+
+class ShortRecipeSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
