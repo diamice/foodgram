@@ -43,6 +43,8 @@ class UserAvatarSerializer(UserSerializer):
         )
 
 
+
+
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
@@ -76,9 +78,6 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         source='ingredient.name',
         read_only=True
     )
-    ingredient = IngredientSerializer(
-        read_only=True
-    )
     measurement_unit = serializers.CharField(
         source='ingredient.measurement_unit',
         read_only=True
@@ -86,7 +85,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'name', 'measurement_unit', 'amount', 'ingredient')
+        fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -95,14 +94,26 @@ class RecipeSerializer(serializers.ModelSerializer):
     image = Base64ImageField(required=False, allow_null=True)
     amount = RecipeIngredientSerializer(many=True, read_only=True)
     tags = TagSerializer(many=True)
-    is_favorite = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
-        fields = '__all__'
+        fields = (
+            'id',
+            'tags',
+            'author',
+            'ingredients',
+            'amount',
+            'name',
+            'image',
+            'text',
+            'cooking_time',
+            'is_favorited',
+            'is_in_shopping_cart',
+        )
 
-    def get_is_favorite(self, obj):
+    def get_is_favorited(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return Favorite.objects.filter(user=request.user, recipe=obj).exists()
@@ -122,7 +133,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         many=True
     )
     image = Base64ImageField(
-        required=False,
+        required=True,
         allow_null=True
     )
 
@@ -142,8 +153,13 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         ingredients = attrs.get('ingredients')
+        tags = attrs.get('tags')
         if not ingredients:
             raise serializers.ValidationError('Требуется хотя бы один ингредиент')
+        if not tags:
+            raise serializers.ValidationError('Требуется хотя бы один тег')
+
+
         ingredient_ids = [
             ingredient.get('id') for ingredient in ingredients
         ]
@@ -151,11 +167,22 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Нельзя дублировать ингредиенты'
             )
+
+        tags_ids = [
+            tag.id for tag in tags
+        ]
+
+        if len(set(tags_ids)) != len(tags_ids):
+            raise serializers.ValidationError(
+                'Нельзя дублировать теги'
+            )
+
         for ingredient in ingredients:
             if ingredient.get('amount') <= 0:
                 raise serializers.ValidationError(
                     'Количество ингредиентов должно быть больше нуля.'
                 )
+
         return attrs
 
     def create(self, validated_data):

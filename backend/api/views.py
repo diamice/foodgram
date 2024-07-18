@@ -131,7 +131,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['get'], detail=False)
-    def download_shopping_cart(request):
+    def download_shopping_cart(self, request):
         queryset = Recipe.objects.filter(shopping_cart__user=request.user)
         ingredients = (queryset.values_list(
             'recipe_ingredients__ingredient__name',
