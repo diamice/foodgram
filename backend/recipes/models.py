@@ -149,3 +149,12 @@ class ShoppingCart(models.Model):
 
     def __str__(self):
         return f'{self.user} - {self.recipe}'
+
+
+class ShortLink(models.Model):
+    long_link = models.URLField(unique=True)
+    short_link = models.CharField(max_length=10, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.short_link

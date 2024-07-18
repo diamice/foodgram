@@ -16,8 +16,9 @@ from .serializers import (TagSerializer, IngredientSerializer, RecipeSerializer,
 from .pagination import CustomPagination
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import ReadOrAuthorOnly
-from recipes.models import Recipe, Tag, Ingredient, Favorite, ShoppingCart, RecipeIngredient
+from recipes.models import Recipe, Tag, Ingredient, Favorite, ShoppingCart, RecipeIngredient, ShortLink
 from users.models import Follow
+from .utils import generate_short_link
 
 User = get_user_model()
 
@@ -153,7 +154,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(methods=['get'], detail=True, url_path='get-link', url_name='get-link',)
     def get_link(self, request, pk=None):
-        ...
+        recipe = self.get_object()
+        long_link = request.build_absolute_uri(reverse('recipe-detail', kwargs={'pk': pk}))
+        try:
+            link = ShortLink.objects.get(long_link=long_link)
+        except ShortLink.DoesNotExist:
+            short_link = generate_short_link()
+            link = ShortLink.objects.create(
+                long_link=long_link,
+                short_link=short_link
+            )
+        return Response({'short-link': request.build_absolute_uri('/') + link.short_link}, status=status.HTTP_200_OK)
 
 
 class UserViewSet(djoser_views.UserViewSet):

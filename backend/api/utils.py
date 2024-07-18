@@ -1,5 +1,8 @@
 import base64
 import uuid
+import string
+import random
+
 
 from django.core.files.base import ContentFile
 from rest_framework import serializers
@@ -15,3 +18,11 @@ class Base64ImageField(serializers.ImageField):
             data = ContentFile(base64.b64decode(data), name=file_name)
 
         return super().to_internal_value(data)
+
+
+def generate_short_link(length=6):
+    characters = string.ascii_letters + string.digits
+    short_link = ''.join(random.choice(characters) for _ in range(length))
+    while ShortLink.objects.filter(short_link=short_link).exists():
+        short_link = ''.join(random.choice(characters) for _ in range(length))
+    return short_link
