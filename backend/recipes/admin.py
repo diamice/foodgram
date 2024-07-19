@@ -3,7 +3,6 @@ from django.contrib import admin
 from .models import Tag, Recipe, Ingredient, Favorite, ShoppingCart
 
 
-
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug')
@@ -25,7 +24,9 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('tags__name',)
     empty_value_display = 'Нет Информации'
 
-    @admin.display(description='Общее число добавлений этого рецепта в избранное')
+    @admin.display(
+        description='Общее число добавлений этого рецепта в избранное'
+    )
     def favorite_counter(self, obj):
         return Favorite.objects.filter(recipe=obj).count()
 

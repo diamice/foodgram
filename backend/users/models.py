@@ -8,19 +8,46 @@ from .validators import validate_username
 
 
 class User(AbstractUser):
+    """Модель Для Пользователя"""
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ('username', 'first_name', 'last_name', 'password')
 
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    avatar = models.ImageField(
+        upload_to='avatars/',
+        null=True,
+        blank=True
+    )
 
-    email = models.EmailField(verbose_name='Адрес электронной почты', max_length=254, unique=True, error_messages={'unique': 'Пользователь с такой электронной почтой уже существует'})
+    email = models.EmailField(
+        verbose_name='Адрес электронной почты',
+        max_length=254,
+        unique=True,
+        error_messages={
+            'unique': 'Пользователь с такой электронной почтой уже существует'
+        }
+    )
 
-    username = models.CharField(verbose_name='Уникальный юзернейм', max_length=USER_INFO_MAX_LENGTH,
-                                validators=[UnicodeUsernameValidator(), validate_username], unique=True, db_index=True, error_messages={'unique': 'Пользователь с таким юзернеймом уже существует'})
+    username = models.CharField(
+        verbose_name='Уникальный юзернейм',
+        max_length=USER_INFO_MAX_LENGTH,
+        validators=[UnicodeUsernameValidator(), validate_username],
+        unique=True,
+        db_index=True,
+        error_messages={
+            'unique': 'Пользователь с таким юзернеймом уже существует'
+        }
+    )
 
-    first_name = models.CharField(verbose_name='Имя', max_length=USER_INFO_MAX_LENGTH)
+    first_name = models.CharField(
+        verbose_name='Имя',
+        max_length=USER_INFO_MAX_LENGTH
+    )
 
-    last_name = models.CharField(verbose_name='Фамилия', max_length=USER_INFO_MAX_LENGTH)
+    last_name = models.CharField(
+        verbose_name='Фамилия',
+        max_length=USER_INFO_MAX_LENGTH
+    )
 
     class Meta:
         ordering = ('username',)
@@ -32,8 +59,21 @@ class User(AbstractUser):
 
 
 class Follow(models.Model):
-    user = models.ForeignKey(User, verbose_name='Пользователь', on_delete=models.CASCADE, related_name='follower')
-    author = models.ForeignKey(User, verbose_name='Пользователь', on_delete=models.CASCADE, related_name='author')
+    """Модель Для Подписки на Пользователя"""
+
+    user = models.ForeignKey(
+        User,
+        verbose_name='Пользователь',
+        on_delete=models.CASCADE,
+        related_name='follower'
+    )
+
+    author = models.ForeignKey(
+        User,
+        verbose_name='Пользователь',
+        on_delete=models.CASCADE,
+        related_name='author'
+    )
 
     class Meta:
         verbose_name = 'Подсписка'

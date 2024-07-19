@@ -23,6 +23,17 @@ jobs:
           pip install flake8==6.0.0 flake8-isort==6.0.0
           pip install -r ./backend/requirements.txt
 
+      - name: Flake8 tests
+        env:
+          POSTGRES_USER: kittygram_user
+          POSTGRES_PASSWORD: kittygram_password
+          POSTGRES_DB: kittygram_db
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+        run:
+          python -m flake8 backend/
+
+
   build_backend_and_push_to_docker_hub:
     name: Push Docker image to DockerHub
     runs-on: ubuntu-latest
@@ -125,7 +136,6 @@ jobs:
             sudo docker compose -f docker-compose.production.yml pull
             sudo docker compose -f docker-compose.production.yml down
             sudo docker compose -f docker-compose.production.yml up -d
-            sudo docker cp data/ingredients.json foodgram-backend-1:/app/ingredients.json
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
             sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /static/static/

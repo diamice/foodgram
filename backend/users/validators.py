@@ -8,4 +8,3 @@ def validate_username(username):
         raise ValidationError(
             f'Имя пользователя - {username} содержит запрещенные символы'
         )
-
