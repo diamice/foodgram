@@ -1,10 +1,10 @@
-from django.db import models
-from django.db.models import UniqueConstraint
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
+from django.db import models
+from django.db.models import UniqueConstraint
 
-from .constants import (TAG_CONSTANT, MIN_COOKING_TIME,
-                        MAX_SHOW_LENGTH, MIN_INGREDIENT_AMOUNT)
+from .constants import (MAX_SHOW_LENGTH, MIN_COOKING_TIME,
+                        MIN_INGREDIENT_AMOUNT, TAG_CONSTANT)
 
 User = get_user_model()
 
