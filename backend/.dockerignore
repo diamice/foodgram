@@ -1,0 +1,5 @@
+### my_dockerignore template
+venv
+.git
+db.sqlite3
+.env
