@@ -65,14 +65,14 @@ class Follow(models.Model):
         User,
         verbose_name='Пользователь',
         on_delete=models.CASCADE,
-        related_name='follower'
+        related_name='followers'
     )
 
     author = models.ForeignKey(
         User,
         verbose_name='Пользователь',
         on_delete=models.CASCADE,
-        related_name='author'
+        related_name='authors'
     )
 
     class Meta:

@@ -162,7 +162,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         user = request.user
         ingredients = (RecipeIngredient.objects
-                       .filter(recipe__shopping_cart__user=user)
+                       .filter(recipe__shopping_carts__user=user)
                        .values('ingredient__name',
                                'ingredient__measurement_unit'
                                )
@@ -249,7 +249,7 @@ class UserViewSet(djoser_views.UserViewSet):
     )
     def subscriptions(self, request):
         user = request.user
-        queryset = User.objects.filter(author__user=user)
+        queryset = User.objects.filter(authors__user=user)
         pages = self.paginate_queryset(queryset)
         serializer = UserFollowSerializer(
             pages, many=True, context={'request': request}
