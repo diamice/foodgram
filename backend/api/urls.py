@@ -13,10 +13,5 @@ router_v1.register(r'users', UserViewSet, basename='user')
 urlpatterns = [
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
-    path(
-        'api/users/me/avatar/',
-        UserViewSet.as_view({'put': 'avatar', 'delete': 'avatar'}),
-        name='user-avatar'
-    ),
     path('', include(router_v1.urls))
 ]

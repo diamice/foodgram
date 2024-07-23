@@ -218,16 +218,15 @@ class UserViewSet(djoser_views.UserViewSet):
         permission_classes=[IsAuthenticated]
     )
     def me(self, request):
-        user = request.user
-        serializer = self.get_serializer(user)
-        return Response(serializer.data)
+        return super().me(request)
 
     @action(
-        detail=True,
+        detail=False,
         methods=['put', 'delete'],
-        permission_classes=[IsAuthenticated]
+        permission_classes=[IsAuthenticated],
+        url_path='me/avatar'
     )
-    def avatar(self, request, id):
+    def avatar(self, request):
         user = request.user
         if request.method == 'PUT':
             serializer = UserAvatarSerializer(
