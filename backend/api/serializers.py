@@ -4,8 +4,7 @@ from rest_framework import serializers
 from users.models import Follow
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
-
-from .utils import Base64ImageField
+from api.utils import Base64ImageField
 
 User = get_user_model()
 
@@ -42,7 +41,7 @@ class UserSerializer(serializers.ModelSerializer):
                 filter(user=request.user, author=obj).exists())
 
 
-class UserAvatarSerializer(UserSerializer):
+class UserAvatarSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField()
 
     class Meta:
@@ -88,11 +87,11 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         source='ingredient.id',
         required=False
     )
-    name = serializers.CharField(
+    name = serializers.ReadOnlyField(
         source='ingredient.name',
         read_only=True
     )
-    measurement_unit = serializers.CharField(
+    measurement_unit = serializers.ReadOnlyField(
         source='ingredient.measurement_unit',
         read_only=True
     )
@@ -172,16 +171,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                        for ingredient in ingredients]
         RecipeIngredient.objects.bulk_create(ingredients)
 
-    def validate(self, attrs):
-        ingredients = attrs.get('ingredients')
-        tags = attrs.get('tags')
+    def validate_ingredients(self, ingredients):
         if not ingredients:
             raise serializers.ValidationError(
                 'Требуется хотя бы один ингредиент'
-            )
-        if not tags:
-            raise serializers.ValidationError(
-                'Требуется хотя бы один тег'
             )
 
         ingredient_ids = [
@@ -192,15 +185,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 'Нельзя дублировать ингредиенты'
             )
 
-        tags_ids = [
-            tag.id for tag in tags
-        ]
-
-        if len(set(tags_ids)) != len(tags_ids):
-            raise serializers.ValidationError(
-                'Нельзя дублировать теги'
-            )
-
         for ingredient in ingredients:
             if not Ingredient.objects.filter(id=ingredient.get('id')).exists():
                 raise serializers.ValidationError('Ингредиента нет в базе')
@@ -209,6 +193,27 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                     'Количество ингредиентов должно быть больше нуля.'
                 )
 
+        return ingredients
+
+    def validate_tags(self, tags):
+        if not tags:
+            raise serializers.ValidationError(
+                'Требуется хотя бы один тег'
+            )
+
+        tags_ids = [
+            tag.id for tag in tags
+        ]
+        if len(set(tags_ids)) != len(tags_ids):
+            raise serializers.ValidationError(
+                'Нельзя дублировать теги'
+            )
+
+        return tags
+
+    def validate(self, attrs):
+        attrs['ingredients'] = self.validate_ingredients(attrs.get('ingredients', []))
+        attrs['tags'] = self.validate_tags(attrs.get('tags', []))
         return attrs
 
     def create(self, validated_data):
@@ -324,9 +329,6 @@ class UserFollowSerializer(UserSerializer):
             recipes = recipes[:int(limit)]
         serializer = FollowRecipeSerializer(recipes, many=True, read_only=True)
         return serializer.data
-
-    def get_is_subscribed(self, obj):
-        return True
 
 
 class FollowSerializer(serializers.ModelSerializer):
