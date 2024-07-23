@@ -50,12 +50,12 @@ class UserAvatarSerializer(serializers.ModelSerializer):
             'avatar',
         )
 
-    def validate(self, attrs):
-        if 'avatar' not in attrs:
+    def validate_avatar(self, value):
+        if not value:
             raise serializers.ValidationError(
-                'Поле "avatar" обязательно для загрузки аватара.'
+                'Поле "avatar" должно содержать изображение.'
             )
-        return attrs
+        return value
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -73,6 +73,7 @@ class IngredientSerializer(serializers.ModelSerializer):
 class IngredientsAddSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
     amount = serializers.IntegerField()
+
 
     class Meta:
         model = Ingredient
@@ -320,11 +321,11 @@ class UserFollowSerializer(UserSerializer):
         fields = UserSerializer.Meta.fields + ('recipes_count', 'recipes')
 
     def get_recipes_count(self, obj):
-        return obj.recipe.count()
+        return obj.recipes.count()
 
     def get_recipes(self, obj):
         limit = self.context['request'].query_params.get('recipes_limit')
-        recipes = obj.recipe.all()
+        recipes = obj.recipes.all()
         if limit:
             recipes = recipes[:int(limit)]
         serializer = FollowRecipeSerializer(recipes, many=True, read_only=True)
