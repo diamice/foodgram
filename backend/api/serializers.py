@@ -71,12 +71,14 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class IngredientsAddSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all(),
+        source='ingredient'
+    )
     amount = serializers.IntegerField()
 
-
     class Meta:
-        model = Ingredient
+        model = RecipeIngredient
         fields = [
             'id',
             'amount'
@@ -166,11 +168,14 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ]
 
     def add_ingredients(self, ingredients, recipe):
-        ingredients = [RecipeIngredient(recipe=recipe,
-                                        ingredient_id=ingredient.get('id'),
-                                        amount=ingredient.get('amount'))
-                       for ingredient in ingredients]
-        RecipeIngredient.objects.bulk_create(ingredients)
+        RecipeIngredient.objects.bulk_create([
+            RecipeIngredient(
+                recipe=recipe,
+                ingredient=ingredient.get('ingredient'),
+                amount=ingredient.get('amount')
+            )
+            for ingredient in ingredients
+        ])
 
     def validate_ingredients(self, ingredients):
         if not ingredients:
@@ -179,7 +184,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             )
 
         ingredient_ids = [
-            ingredient.get('id') for ingredient in ingredients
+            ingredient.get('ingredient').id for ingredient in ingredients
         ]
         if len(set(ingredient_ids)) != len(ingredient_ids):
             raise serializers.ValidationError(
@@ -187,8 +192,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             )
 
         for ingredient in ingredients:
-            if not Ingredient.objects.filter(id=ingredient.get('id')).exists():
-                raise serializers.ValidationError('Ингредиента нет в базе')
             if ingredient.get('amount') <= 0:
                 raise serializers.ValidationError(
                     'Количество ингредиентов должно быть больше нуля.'
@@ -213,7 +216,9 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return tags
 
     def validate(self, attrs):
-        attrs['ingredients'] = self.validate_ingredients(attrs.get('ingredients', []))
+        attrs['ingredients'] = (
+            self.validate_ingredients(attrs.get('ingredients', []))
+        )
         attrs['tags'] = self.validate_tags(attrs.get('tags', []))
         return attrs
 
@@ -227,7 +232,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('ingredients')
-        instance.ingredients.clear()
+        instance.recipe_ingredient.all().delete()
         self.add_ingredients(ingredients, instance)
         instance.tags.set(validated_data.pop('tags'))
         return super().update(instance, validated_data)

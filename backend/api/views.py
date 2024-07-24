@@ -237,10 +237,12 @@ class UserViewSet(djoser_views.UserViewSet):
             if serializer.is_valid(raise_exception=True):
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
         user.avatar.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
 
     @action(
         methods=['get'],
