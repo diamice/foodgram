@@ -50,12 +50,12 @@ class UserAvatarSerializer(serializers.ModelSerializer):
             'avatar',
         )
 
-    def validate_avatar(self, value):
-        if not value:
+    def validate_avatar(self, avatar):
+        if not avatar:
             raise serializers.ValidationError(
                 'Поле "avatar" должно содержать изображение.'
             )
-        return value
+        return avatar
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -254,10 +254,9 @@ class FavoriteSerializer(serializers.ModelSerializer):
         model = Favorite
         fields = ('user', 'recipe')
 
-    def validate(self, attrs):
+    def validate_recipe(self, recipe):
         request = self.context['request']
         user = request.user
-        recipe = attrs['recipe']
 
         if request.method == 'POST':
             if Favorite.objects.filter(
@@ -274,7 +273,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Рецепт не найден в избранном'
             )
-        return attrs
+        return recipe
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
@@ -282,10 +281,10 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         model = ShoppingCart
         fields = ('user', 'recipe')
 
-    def validate(self, attrs):
+    def validate_recipe(self, recipe):
         request = self.context.get('request')
         user = request.user
-        recipe = attrs['recipe']
+
         if request.method == 'POST':
             if ShoppingCart.objects.filter(
                     user=user,
@@ -299,7 +298,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
                     recipe=recipe
             ).exists():
                 raise serializers.ValidationError('Рецепт не найден в корзине')
-        return attrs
+        return recipe
 
 
 class FollowRecipeSerializer(serializers.ModelSerializer):
@@ -337,9 +336,9 @@ class FollowSerializer(serializers.ModelSerializer):
         model = Follow
         fields = ('user', 'author')
 
-    def validate(self, data):
+    def validate_author(self, author):
         user = self.context['request'].user
-        author = data['author']
+
         if user == author:
             raise serializers.ValidationError(
                 "Вы не можете подписаться на себя."
@@ -348,7 +347,7 @@ class FollowSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Вы уже подписаны на этого пользователя."
             )
-        return data
+        return author
 
     def to_representation(self, instance):
         context = self.context
