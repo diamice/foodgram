@@ -213,14 +213,6 @@ class UserViewSet(djoser_views.UserViewSet):
     pagination_class = CustomPagination
 
     @action(
-        methods=['get'],
-        detail=False,
-        permission_classes=[IsAuthenticated]
-    )
-    def me(self, request):
-        return super().me(request)
-
-    @action(
         detail=False,
         methods=['put', 'delete'],
         permission_classes=[IsAuthenticated],
